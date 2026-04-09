@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CineDub: Scaling End-to-End Video Dubbing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"></noscript>
+<style>
+:root {
+  --bg: #0b0f1e;
+  --bg2: #111827;
+  --bg3: #1a2235;
+  --card: #141c2f;
+  --border: #1e2d4a;
+  --border2: #2a3a5c;
+  --gold: #d4a843;
+  --gold2: #e8c05a;
+  --blue: #4f8ef7;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --ours: #22c55e;
+  --ours-bg: rgba(34,197,94,0.08);
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6}
+h1,h2,h3,h4{font-family:'Playfair Display',serif}
+
+/* ===== HEADER ===== */
+.hero{
+  background: linear-gradient(160deg, #0f1628 0%, #0b1020 40%, #0d1525 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 72px 24px 60px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background: radial-gradient(ellipse 90% 70% at 50% -5%, rgba(212,168,67,0.08) 0%, transparent 65%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-block;
+  background: rgba(212,168,67,0.1);
+  border: 1px solid rgba(212,168,67,0.28);
+  color: var(--gold);
+  font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  padding:4px 14px;border-radius:100px;margin-bottom:32px;
+}
+.hero-wordmark{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(64px,11vw,108px);
+  font-weight:900;
+  line-height:1;
+  letter-spacing:-0.025em;
+  background:linear-gradient(135deg,#f0cc6a 0%,#d4a843 45%,#e8c060 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:20px;
+  position:relative;
+}
+.hero-wordmark::after{
+  content:'';display:block;
+  width:48px;height:2px;
+  background:linear-gradient(90deg,rgba(212,168,67,0.6),rgba(212,168,67,0.1));
+  margin:18px auto 0;
+  border-radius:1px;
+}
+.hero-title-main{
+  font-family:'DM Sans',sans-serif;
+  font-size:clamp(15px,2vw,21px);
+  font-weight:400;
+  color:rgba(255,255,255,0.82);
+  letter-spacing:0.005em;
+  line-height:1.5;
+  max-width:720px;margin:0 auto;
+}
+.hero-title-main em{
+  font-style:normal;
+  color:rgba(255,255,255,0.48);
+  font-size:0.92em;
+}
+.hero h1{ display:none }
+.hero-sub{
+  font-size:13px;color:var(--text3);max-width:700px;margin:24px auto 32px;
+  letter-spacing:0.03em;
+}
+.hero-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.hero-link{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;
+  text-decoration:none;transition:all 0.2s;
+}
+.hero-link.primary{background:rgba(212,168,67,0.15);border:1px solid rgba(212,168,67,0.4);color:var(--gold)}
+.hero-link.primary:hover{background:rgba(212,168,67,0.25)}
+.hero-link.secondary{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--text2)}
+.hero-link.secondary:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+.hero-nav{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:28px}
+.hero-nav a{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 20px;border-radius:100px;font-size:12px;font-weight:500;
+  text-decoration:none;transition:all 0.2s;letter-spacing:0.03em;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text2);
+}
+.hero-nav a:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)}
+.hero-load-hint{
+  margin-top:16px;font-size:12px;color:#fff;
+  letter-spacing:0.02em;
+}
+.demo-nav{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+.demo-nav a{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 18px;border-radius:100px;font-size:11.5px;font-weight:500;
+  text-decoration:none;transition:all 0.2s;letter-spacing:0.03em;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);
+}
+.demo-nav a:hover{background:rgba(212,168,67,0.12);border-color:rgba(212,168,67,0.3);color:var(--gold)}
+
+/* ===== SECTION WRAPPERS ===== */
+.section{padding:56px 24px}
+.section.alt{background:var(--bg2)}
+.section.dark{background:var(--bg3)}
+.container{max-width:1200px;margin:0 auto}
+.section-label{
+  font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:8px;text-align:center;
+}
+.section-title{
+  font-size:clamp(20px,2.5vw,32px);font-weight:700;color:#fff;
+  margin-bottom:12px;text-align:center;
+}
+.section-desc{color:var(--text2);max-width:720px;font-size:15px;line-height:1.75;text-align:center;margin-left:auto;margin-right:auto}
+
+/* ===== INTRO HIGHLIGHTS ===== */
+.highlights{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-top:40px}
+.highlight-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;position:relative;overflow:hidden;
+  transition:border-color 0.2s,background 0.2s,transform 0.2s,box-shadow 0.2s;
+  cursor:default;
+}
+.highlight-card:hover{
+  border-color:rgba(212,168,67,0.4);
+  background:rgba(212,168,67,0.04);
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px rgba(0,0,0,0.25);
+}
+.highlight-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg, var(--gold), transparent);
+  transition:opacity 0.2s;
+}
+.highlight-card:hover::before{
+  opacity:1;background:linear-gradient(90deg, var(--gold), rgba(212,168,67,0.3));
+}
+.highlight-icon{font-size:22px;margin-bottom:12px}
+.highlight-card h4{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#fff;margin-bottom:6px}
+.highlight-card p{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* ===== FIGURE ===== */
+.figure-wrap{margin-top:48px;text-align:center}
+.figure-wrap + .figure-wrap{margin-top:56px}
+.fig-img{
+  max-width:92%;height:auto;border-radius:10px;cursor:zoom-in;
+  box-shadow:0 6px 40px rgba(0,0,0,0.55);
+  transition:transform 0.25s,box-shadow 0.25s;
+  border:1px solid rgba(255,255,255,0.06);
+}
+.fig-img:hover{transform:scale(1.005);box-shadow:0 12px 56px rgba(0,0,0,0.65)}
+.fig-wide{max-width:96%}
+.fig-caption-bar{
+  display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;
+  max-width:1000px;margin:20px auto 0;padding:16px 4px;
+  border-top:1px solid var(--border);text-align:left;
+}
+.fig-num{
+  font-size:9.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--gold);background:rgba(212,168,67,0.1);
+  border:1px solid rgba(212,168,67,0.25);border-radius:4px;
+  padding:3px 9px;white-space:nowrap;margin-top:3px;
+}
+.fig-caption-text{font-size:13px;color:var(--text2);line-height:1.8}
+
+/* ===== LIGHTBOX ===== */
+.lightbox-overlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.92);align-items:center;justify-content:center;
+  animation:lbFadeIn 0.2s ease;
+}
+.lightbox-overlay.active{display:flex}
+@keyframes lbFadeIn{from{opacity:0}to{opacity:1}}
+.lightbox-img{max-width:90vw;max-height:88vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 48px rgba(0,0,0,0.7)}
+.lightbox-close{
+  position:absolute;top:20px;right:32px;background:none;border:none;
+  color:#fff;font-size:36px;cursor:pointer;opacity:0.7;line-height:1;
+  transition:opacity 0.2s;
+}
+.lightbox-close:hover{opacity:1}
+
+/* ===== TRANSCRIPTION ===== */
+.trans-wrap{
+  margin:10px 0 4px;
+  border:1px solid rgba(212,168,67,0.22);
+  border-radius:6px;
+  background:rgba(212,168,67,0.04);
+  overflow:hidden;
+}
+.trans-header{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 12px;border-bottom:1px solid rgba(212,168,67,0.15);
+  background:rgba(212,168,67,0.07);
+  font-size:9.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);
+}
+.trans-header-tag{
+  background:rgba(212,168,67,0.18);color:var(--gold);
+  border:1px solid rgba(212,168,67,0.3);border-radius:3px;
+  padding:1px 6px;font-size:9px;font-weight:600;letter-spacing:0.07em;
+}
+.trans-body{
+  padding:10px 12px;font-size:12px;line-height:1.85;color:var(--text2);word-break:break-word;
+  max-height:82px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(212,168,67,0.3) transparent;
+}
+.trans-body::-webkit-scrollbar{width:4px}
+.trans-body::-webkit-scrollbar-track{background:transparent}
+.trans-body::-webkit-scrollbar-thumb{background:rgba(212,168,67,0.35);border-radius:2px}
+.trans-desc-inline{color:var(--text3);font-style:italic;}
+.trans-s{color:var(--gold);font-weight:700;font-style:normal;font-size:10.5px;vertical-align:0.5px;}
+.trans-e{color:var(--gold);font-weight:700;font-style:normal;font-size:10.5px;vertical-align:0.5px;}
+.trans-speech-inline{color:#e8e8e8;}
+
+/* ===== COMPARISON TABLE ===== */
+.vs-table{
+  margin-top:36px;border-radius:14px;border:1px solid var(--border);
+  overflow:hidden;background:var(--card);
+}
+.vs-table table{width:100%;border-collapse:collapse;font-size:13px}
+.vs-table thead{background:rgba(255,255,255,0.04)}
+.vs-table th{
+  color:rgba(255,255,255,0.75);font-size:9.5px;font-weight:700;letter-spacing:0.1em;
+  text-transform:uppercase;padding:12px 16px;text-align:center;
+  border-bottom:1px solid var(--border);
+}
+.vs-table th:first-child{text-align:left;padding-left:22px}
+.vs-table td{
+  padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);
+  vertical-align:middle;text-align:center;
+}
+.vs-table tr:last-child td{border-bottom:none}
+.vs-table tr:hover:not(.group-hdr):not(.ours-row) td{background:rgba(255,255,255,0.025)}
+.vs-table td:first-child{text-align:left;color:#fff;font-weight:500;padding-left:22px}
+.vs-table tbody tr:not(.group-hdr) td:nth-child(2){font-size:11px;color:var(--text3)}
+.group-hdr td{
+  background:rgba(255,255,255,0.018);color:rgba(255,255,255,0.28);
+  font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+  padding:6px 22px;border-top:1px solid var(--border);
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.group-hdr:first-child td{border-top:none}
+.group-hdr.ours-hdr td{
+  background:rgba(34,197,94,0.06);color:var(--ours);
+  border-top:1px solid rgba(34,197,94,0.2);
+  border-bottom:1px solid rgba(34,197,94,0.1);
+  letter-spacing:0.18em;
+}
+.ours-row td{background:rgba(34,197,94,0.05)}
+.ours-row td:first-child{
+  color:var(--ours);font-weight:700;
+  padding-left:19px;border-left:3px solid var(--ours);
+}
+.ours-row .check{font-size:18px}
+.check{color:#4ade80;font-size:16px}
+.cross{color:#f87171;font-size:16px}
+.partial{color:#fbbf24;font-size:16px}
+.na{color:rgba(255,255,255,0.2);font-size:20px;font-weight:200;line-height:1}
+
+/* ===== DEMO HEADER ===== */
+.demo-header{
+  background:linear-gradient(135deg, #0f1628, #141c2f);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:40px 24px;text-align:center;
+}
+.demo-header h2{font-size:clamp(24px,3vw,40px);color:#fff;margin-bottom:8px}
+.demo-header p{color:var(--text2);font-size:15px}
+
+/* ===== SECTION NAV ===== */
+.section-nav{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px}
+.section-nav a{
+  color:var(--text2);text-decoration:none;font-size:13px;font-weight:500;
+  padding:6px 14px;border-radius:6px;border:1px solid var(--border);
+  transition:all 0.2s;
+}
+.section-nav a:hover{color:var(--gold);border-color:rgba(212,168,67,0.4)}
+
+/* ===== TAB PILLS ===== */
+.tabs{display:flex;justify-content:center;gap:0;margin-bottom:28px;
+  background:var(--bg3);border-radius:100px;padding:4px;
+  width:fit-content;margin-left:auto;margin-right:auto;
+  border:1px solid var(--border);
+}
+.tab-btn{
+  padding:8px 22px;border-radius:100px;font-size:13px;font-weight:500;
+  border:none;background:transparent;color:var(--text2);cursor:pointer;transition:all 0.2s;
+  white-space:nowrap;
+}
+.tab-btn.active{background:var(--gold);color:#000;font-weight:600}
+.tab-btn:not(.active):hover{color:var(--text)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ===== INFO BOX ===== */
+.info-box{
+  background:rgba(212,168,67,0.07);border:1px solid rgba(212,168,67,0.25);
+  border-radius:8px;padding:14px 18px;margin-bottom:24px;
+  font-size:13px;color:var(--text2);line-height:1.6;
+}
+.info-box strong{color:var(--gold)}
+.warn-box{
+  background:rgba(212,168,67,0.07);border:1px solid rgba(212,168,67,0.25);
+  border-radius:8px;padding:14px 18px;margin-bottom:24px;
+  font-size:13px;color:var(--text2);line-height:1.6;
+}
+.warn-box strong{color:var(--gold)}
+
+/* ===== VIDEO GRID ===== */
+.video-grid{display:grid;gap:20px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+/* ===== VIDEO CARD ===== */
+.vcard{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;transition:border-color 0.2s;
+}
+.vcard:hover{border-color:var(--border2)}
+.vcard.ours{border-color:rgba(34,197,94,0.35);background:rgba(34,197,94,0.03)}
+.vcard-label{
+  padding:8px 12px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+.vcard-label.ours-label{background:rgba(34,197,94,0.1);color:var(--ours)}
+.vcard-label.other-label{background:rgba(255,255,255,0.03);color:var(--text3)}
+.vcard video{width:100%;aspect-ratio:16/9;display:block;background:#000}
+.vcard-body{padding:12px}
+.cap-row{margin-top:10px;font-size:12px}
+.cap-label{display:block;color:var(--gold);font-weight:600;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px}
+.cap-val{display:block;color:var(--text2);line-height:1.6}
+.cap-expand{display:none}
+.cap-short{display:block}
+
+/* ===== AUDIO REF CARD ===== */
+.ref-audio-wrap{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:14px 16px;margin-bottom:16px;
+}
+.ref-audio-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin-bottom:8px}
+.ref-audio-wrap audio{width:100%;height:32px}
+
+/* ===== COMPARE ROW ===== */
+.compare-section{margin-top:20px}
+.compare-row{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  margin-bottom:24px;overflow:hidden;
+}
+.compare-cap{padding:14px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.6}
+.compare-cap strong{color:#fff}
+.compare-videos{display:grid}
+
+/* ===== SHOW MORE ===== */
+.show-more-wrap{text-align:center;margin-top:20px}
+.show-more-btn{
+  background:var(--bg3);border:1px solid var(--border);color:var(--text2);
+  padding:10px 28px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;
+  transition:all 0.2s;
+}
+.show-more-btn:hover{border-color:var(--gold);color:var(--gold)}
+.hidden-items{display:none}
+.hidden-items.visible{display:contents}
+
+/* ===== TEXT PROMPT EDIT TABLE ===== */
+.edit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:768px){.edit-grid{grid-template-columns:1fr}}
+.edit-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.edit-card-header{
+  padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
+  border-bottom:1px solid var(--border);
+}
+.edit-card-header.v1{background:rgba(100,116,139,0.1);color:#94a3b8}
+.edit-card-header.v2{background:rgba(212,168,67,0.1);color:var(--gold)}
+.edit-card-header.v3{background:rgba(20,184,166,0.1);color:#2dd4bf}
+
+/* ===== GROUP LABEL ===== */
+.group-label{
+  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--text3);margin:24px 0 10px;padding-left:2px;
+}
+
+/* ===== AUDIO PROMPT GROUPS ===== */
+.ap-group{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  margin-bottom:20px;overflow:hidden;
+}
+.ap-group-header{
+  padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);
+  font-size:12px;font-weight:600;color:var(--text2);
+}
+.ap-group-body{padding:16px}
+.ap-cases{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+@media(max-width:640px){.ap-cases{grid-template-columns:1fr}}
+
+/* ===== FOOTER ===== */
+footer{background:#060912;border-top:1px solid var(--border);padding:32px 24px;text-align:center;color:var(--text3);font-size:12px}
+footer a{color:var(--text2);text-decoration:none}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ===== SIDE NAV ===== */
+.side-nav{
+  position:fixed;left:18px;top:50%;transform:translateY(-50%);
+  z-index:200;display:flex;flex-direction:column;align-items:flex-start;
+  padding:10px 0;
+}
+@media(max-width:1100px){.side-nav{display:none}}
+.side-nav-track{
+  position:absolute;left:10px;top:16px;bottom:16px;
+  width:1px;background:rgba(255,255,255,0.08);pointer-events:none;
+}
+.side-nav-item{
+  display:flex;align-items:center;gap:10px;
+  text-decoration:none;padding:7px 0;position:relative;z-index:1;
+}
+.side-dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.12);
+  transition:all 0.25s ease;margin-left:7px;
+}
+.side-label{
+  font-size:9.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  color:rgba(255,255,255,0.32);white-space:nowrap;
+  transition:color 0.2s ease;
+  pointer-events:none;
+}
+.side-nav-item:hover .side-dot{
+  background:var(--gold)!important;
+  box-shadow:0 0 10px rgba(212,168,67,0.55);
+  transform:scale(1.6);
+}
+.side-nav-item:hover .side-label{
+  color:var(--gold)!important;
+}
+.side-nav-item.active .side-dot{
+  background:var(--gold);width:8px;height:8px;margin-left:6px;
+  box-shadow:0 0 14px rgba(212,168,67,0.65);
+}
+.side-nav-item.active .side-label{
+  color:rgba(255,255,255,0.65)!important;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="hero-wordmark">CineDub</div>
+  <div class="hero-title-main">
+    Scaling End-to-End Video Dubbing<br>
+    <em>to Multi-Speaker Dialogues with Coherent Sound Effects</em>
+  </div>
+  <p class="hero-sub">Anonymous Authors</p>
+  <nav class="hero-nav">
+    <a href="#overview">↓ Overview</a>
+    <a href="#compare">↓ Comparison</a>
+    <a href="#demos">↓ Demos</a>
+  </nav>
+  <p class="hero-load-hint">⏳ On first visit, please allow 1–2 minutes for all videos to preload.</p>
+</header>
+
+<!-- ===== ABSTRACT ===== -->
+<section class="section" id="overview">
+<div class="container">
+  <div class="section-label">Overview</div>
+  <h2 class="section-title">A Unified End-to-End Framework for Cinematic Audio</h2>
+  <p class="section-desc">
+    Automatic video dubbing in the wild remains fundamentally limited by two competing constraints: hierarchical methods depend on brittle, multi-stage preprocessing pipelines, while holistic approaches suffer from weak temporal alignment and speaker-utterance ambiguity in multi-speaker settings. We propose CineDub, a unified diffusion-based model that achieves precise multi-speaker dialogue dubbing directly from uncropped videos — without face cropping or speaker diarization. Central to our approach is the Implicitly-Coupled Holistic Conditioning (ICHC) paradigm, which resolves speaker ambiguity through cross-modal coupling of holistic visual features and semantic-bundled transcriptions, enabling multi-turn dialogue dubbing at scale. Building on these unified temporal cues, CineDub further extends to joint speech and coherent audio generation in a single pass — eliminating the ghost speech artifacts and acoustic incoherence inherent to cascaded pipelines.
+  </p>
+
+  <div class="highlights">
+    <div class="highlight-card">
+      <div class="highlight-icon">🎯</div>
+      <h4>Implicitly-Coupled Holistic Conditioning (ICHC)</h4>
+      <p>SynchFormer features exhibit emergent attention-switching, dynamically tracking the active speaker without diarization. A semantic-bundled transcription format resolves speaker-utterance ambiguity — directly generatable by MLLMs.</p>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-icon">🔗</div>
+      <h4>Unified Speech &amp; Audio Joint Generation</h4>
+      <p>A single end-to-end model simultaneously generates dubbed speech and coherent sound effects from uncropped video, bypassing cascaded pipelines that introduce ghost speech artifacts and acoustic incoherence.</p>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-icon">📚</div>
+      <h4>Ambient-to-Linguistic Curriculum Learning</h4>
+      <p>Inspired by human linguistic evolution, the model first learns general audio then specializes toward speech, resolving the optimization conflict between tasks. A decoupled textual branch with learnable meta-tokens further routes speech and audio prompts independently, eliminating cross-prompt interference and achieving expert-mode inference performance.</p>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-icon">🏆</div>
+      <h4>Two New In-the-Wild Benchmarks</h4>
+      <p><strong style="color:#fff">CineDub-Multi</strong> for multi-speaker dialogue dubbing and <strong style="color:#fff">CineDub-SA</strong> for V2SA evaluation — enabling realistic assessment beyond single-speaker assumptions.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== FIGURES ===== -->
+<section class="section alt" id="figures">
+<div class="container">
+  <div class="section-label">Main Figures</div>
+  <h2 class="section-title">Overview: Paradigm Comparison</h2>
+  <div class="figure-wrap">
+    <img src="src/compare.png" alt="Paradigm comparison figure" class="fig-img fig-wide" loading="lazy" onclick="openLightbox('src/compare.png')">
+    <div class="fig-caption-bar">
+      <span class="fig-num">Fig. 1</span>
+      <p class="fig-caption-text">
+        <strong style="color:rgba(255,255,255,0.9)">(a)</strong> Existing video dubbing methods rely on complex preprocessing — speaker diarization, face &amp; lip detection, and forced alignment — limiting scalability and practicality in the wild.
+        <strong style="color:rgba(255,255,255,0.9)">(b)</strong> Generating accompanying sound effects requires a separate V2A model, which inevitably introduces <em>ghost speech artifacts</em> — spurious speech-like sounds from the V2A model that corrupt the final mix — and acoustic incoherence between independently generated speech and audio.
+        <strong style="color:rgba(255,255,255,0.9)">(c)</strong> CineDub jointly generates multi-speaker dialogue with coherent sound effects through a single unified end-to-end model, requiring only an uncropped video and an MLLM-generated semantic-bundled transcription.
+      </p>
+    </div>
+  </div>
+  <div class="figure-wrap">
+    <img src="src/framework.png" alt="CineDub ICHC framework" class="fig-img fig-wide" loading="lazy" onclick="openLightbox('src/framework.png')">
+    <div class="fig-caption-bar">
+      <span class="fig-num">Fig. 2</span>
+      <p class="fig-caption-text">
+        The ICHC paradigm of CineDub. The holistic visual condition extracted by SynchFormer encodes both event-level audio-visual correspondences and fine-grained lip-sync alignment. The semantic-bundled transcription provides per-segment speaker-utterance grounding cues, implicitly coupling with visual features via multi-conditional training to resolve speaker ambiguity. Speech and audio prompts are routed through <em>decoupled textual branches</em> to prevent cross-prompt interference, with learnable meta-tokens replacing inactive branches during single-task inference to achieve expert-mode performance.
+      </p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Lightbox Modal -->
+<div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightbox-img" src="" alt="" class="lightbox-img">
+</div>
+
+<!-- ===== VS TABLE ===== -->
+<section class="section" id="compare">
+<div class="container">
+  <div class="section-label">Comparison</div>
+  <h2 class="section-title" style="color:#fff;font-size:clamp(26px,3.5vw,44px)">CineDub vs. Prior Work</h2>
+  <p class="section-desc" style="color:rgba(255,255,255,0.8);font-size:16px">CineDub is the first holistic model that simultaneously handles multi-speaker dialogue, precise lip sync, and end-to-end joint speech+audio generation — no preprocessing required.</p>
+  <div class="vs-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Paradigm</th>
+          <th>No Multi-Preprocessing</th>
+          <th>Lip Sync</th>
+          <th>Multi-Speaker</th>
+          <th>Joint Speech+Audio</th>
+          <th>vs. Expert Model</th>
+          <th>Checkpoint</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- ── Group 1: Video Dubbing ── -->
+        <tr class="group-hdr"><td colspan="8">Automatic Video Dubbing</td></tr>
+        <tr><td>HPMDubbing</td><td>Lip/Face Crop</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="na">—</td><td class="check">✓</td></tr>
+        <tr><td>EmoDubber</td><td>Lip/Face Crop</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="na">—</td><td class="check">✓</td></tr>
+        <tr><td>AlignDiT</td><td>Lip/Face Crop</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="na">—</td><td class="check">✓</td></tr>
+        <tr><td>DeepDubber</td><td>Holistic</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="na">—</td><td class="check">✓</td></tr>
+        <tr><td>DeepAudio</td><td>Holistic</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td><td class="partial">△ <span style="font-size:10px;font-weight:400">cascade</span></td><td class="na">—</td><td class="check">✓</td></tr>
+        <tr><td>FunCineForge</td><td>Lip/Face Crop</td><td class="cross">✗</td><td class="partial">△ <span style="font-size:10px;font-weight:400">AR</span></td><td class="check">✓</td><td class="cross">✗</td><td class="na">—</td><td class="check">✓</td></tr>
+        <!-- ── Group 2: V2SA ── -->
+        <tr class="group-hdr"><td colspan="8">Video-to-Speech-and-Audio (V2SA)</td></tr>
+        <tr><td>DualDub</td><td>Holistic</td><td class="check">✓</td><td class="partial">△ <span style="font-size:10px;font-weight:400">AR</span></td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>BVS</td><td>Holistic</td><td class="check">✓</td><td class="partial">△ <span style="font-size:10px;font-weight:400">AR</span></td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>AudioGen-Omni</td><td>Holistic</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>VSSFlow</td><td>Holistic</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <!-- ── Ours ── -->
+        <tr class="group-hdr ours-hdr"><td colspan="8">Ours</td></tr>
+        <tr class="ours-row">
+          <td>CineDub</td>
+          <td>Holistic</td>
+          <td class="check">✓</td>
+          <td class="check">✓</td>
+          <td class="check">✓</td>
+          <td class="check">✓</td>
+          <td class="check">✓</td>
+          <td class="partial">△ <span style="font-size:10px;font-weight:400">Under Review</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- ===== DEMO HEADER ===== -->
+<div class="demo-header" id="demos">
+  <h2>Demos</h2>
+  <p>All samples generated by a single unified end-to-end DiT model — raw video input only, single-pass generation, no cherry-picking.</p>
+  <nav class="demo-nav">
+    <a href="#sec1">§1 Automatic Video Dubbing</a>
+    <a href="#sec2">§2 Video to Speech &amp; Audio</a>
+    <a href="#sec3">§3 Video to Audio</a>
+  </nav>
+</div>
+
+<!-- ===== SECTION 1: AUTOMATIC VIDEO DUBBING ===== -->
+<section class="section alt" id="sec1">
+<div class="container">
+  <div class="section-label">Section 1</div>
+  <h2 class="section-title">Automatic Video Dubbing</h2>
+  <p class="section-desc">
+    Input: silent video + transcription caption → Output: dubbed speech with coherent sound effects.<br>
+    Transcription captions are directly generated by Gemini 2.5 Pro without any manual annotation. CineDub processes everything in a single unified end-to-end DiT model — no face cropping, no speaker diarization, no preprocessing.
+  </p>
+
+  <!-- Sub-tabs -->
+  <div style="margin-top:32px">
+    <div class="tabs" id="dub-tabs">
+      <button class="tab-btn active" onclick="switchTab('dub','dialogue')">Multi-Speaker Dialogue</button>
+      <button class="tab-btn" onclick="switchTab('dub','speech-edit')">Prompt Control</button>
+    </div>
+
+    <!-- === DIALOGUE TAB === -->
+    <div class="tab-content active" id="dub-dialogue">
+      <div class="tabs" id="dlg-tabs">
+        <button class="tab-btn active" onclick="switchTab('dlg','movie')">Movie</button>
+        <button class="tab-btn" onclick="switchTab('dlg','podcast')">Podcast</button>
+        <button class="tab-btn" onclick="switchTab('dlg','tv_zoom')">TV &amp; Zoom</button>
+        <button class="tab-btn" onclick="switchTab('dlg','compare')">Compare</button>
+      </div>
+
+      <div class="tab-content active" id="dlg-movie"><div id="grid-movie" class="video-grid grid-2"></div><div class="show-more-wrap"><button class="show-more-btn" id="more-movie" onclick="toggleMore('movie')">Show More</button></div></div>
+      <div class="tab-content" id="dlg-podcast"><div id="grid-podcast" class="video-grid grid-2"></div><div class="show-more-wrap"><button class="show-more-btn" id="more-podcast" onclick="toggleMore('podcast')">Show More</button></div></div>
+      <div class="tab-content" id="dlg-tv_zoom"><div id="grid-tv_zoom" class="video-grid grid-2"></div><div class="show-more-wrap"><button class="show-more-btn" id="more-tv_zoom" onclick="toggleMore('tv_zoom')">Show More</button></div></div>
+      <div class="tab-content" id="dlg-compare">
+        <div class="warn-box">
+          <strong>Comparison with FunCineForge</strong> — All FunCineForge samples are generated via the official demo interface at
+          <a href="https://www.modelscope.cn/studios/FunAudioLLM" style="color:var(--gold)" target="_blank">modelscope.cn/studios/FunAudioLLM</a>.
+          We ran multiple rounds and selected relatively good results for comparison.
+        </div>
+        <div id="grid-compare" class="compare-section"></div>
+        <div class="show-more-wrap"><button class="show-more-btn" id="more-dlg-cmp" onclick="toggleMore('dlg-cmp')">Show More</button></div>
+      </div>
+    </div>
+
+    <!-- === SPEECH EDIT TAB === -->
+    <div class="tab-content" id="dub-speech-edit">
+      <div class="tabs" id="edit-tabs">
+        <button class="tab-btn active" onclick="switchTab('edit','audio-prompt')">Audio Prompt</button>
+        <button class="tab-btn" onclick="switchTab('edit','text-prompt')">Text Prompt</button>
+      </div>
+
+      <div class="tab-content active" id="edit-audio-prompt">
+        <div class="info-box">
+          <strong>Audio Prompt Control:</strong> CineDub accepts an optional reference audio to customize the output voice timbre and speaking style.
+          Each group shows a reference audio and two corresponding video output samples generated using that reference.
+        </div>
+        <div id="ap-groups"></div>
+        <div class="show-more-wrap"><button class="show-more-btn" id="more-ap-groups" onclick="toggleMore('ap-groups')">Show More</button></div>
+      </div>
+
+      <div class="tab-content" id="edit-text-prompt">
+        <div class="info-box">
+          <strong>Text Prompt Control:</strong> By modifying the speaker description in the transcription caption at the clause level,
+          we can fine-tune a speaker's state, tone, and emotion — enabling fine-grained prosody control.
+        </div>
+        <div id="tp-grid" class="edit-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== SECTION 2: VIDEO TO SPEECH AND AUDIO ===== -->
+<section class="section" id="sec2">
+<div class="container">
+  <div class="section-label">Section 2</div>
+  <h2 class="section-title">Video to Speech and Audio</h2>
+  <p class="section-desc">
+    Input: silent video + transcription caption + audio caption (optional) → Output: speech and audio.
+  </p>
+  <div style="margin-top:32px">
+    <div class="tabs" id="vtsa-tabs">
+      <button class="tab-btn active" onclick="switchTab('vtsa','vggsound')">YouTube Videos</button>
+      <button class="tab-btn" onclick="switchTab('vtsa','ood')">OOD (Generative Video)</button>
+      <button class="tab-btn" onclick="switchTab('vtsa','vtsa-compare')">Compare</button>
+    </div>
+
+    <div class="tab-content active" id="vtsa-vggsound">
+      <div id="grid-vtsa-vgs" class="video-grid grid-2"></div>
+      <div class="show-more-wrap"><button class="show-more-btn" id="more-vtsa-vgs" onclick="toggleMore('vtsa-vgs')">Show More</button></div>
+    </div>
+
+    <div class="tab-content" id="vtsa-ood">
+      <div class="info-box"><strong>Out-of-Distribution:</strong> CineDub generalizes to AI-generated video.</div>
+      <div id="grid-vtsa-ood" class="video-grid grid-2"></div>
+      <div class="show-more-wrap"><button class="show-more-btn" id="more-vtsa-ood" onclick="toggleMore('vtsa-ood')">Show More</button></div>
+    </div>
+
+    <div class="tab-content" id="vtsa-vtsa-compare">
+      <div class="info-box">
+        <strong>Baselines:</strong> AlignDiT+MMAudio | DeepAudio+MMAudio | CineDub (Ours).
+      </div>
+      <div id="grid-vtsa-cmp" class="compare-section"></div>
+      <div class="show-more-wrap"><button class="show-more-btn" id="more-vtsa-cmp" onclick="toggleMore('vtsa-cmp')">Show More</button></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== SECTION 3: VIDEO TO AUDIO ===== -->
+<section class="section alt" id="sec3">
+<div class="container">
+  <div class="section-label">Section 3</div>
+  <h2 class="section-title">Video to Audio Generation</h2>
+  <p class="section-desc">
+    Input: silent video + audio prompt (optional) → Output: audio.<br>
+    CineDub's unified visual conditioning enables high-quality video-to-audio generation with optional text prompt for fine-grained control.
+  </p>
+  <div style="margin-top:32px">
+    <div class="tabs" id="vt2a-tabs">
+      <button class="tab-btn active" onclick="switchTab('vt2a','vggsound2')">VGGSound</button>
+      <button class="tab-btn" onclick="switchTab('vt2a','vt2a-compare')">Compare</button>
+    </div>
+
+    <div class="tab-content active" id="vt2a-vggsound2">
+      <div id="grid-vt2a-vgs" class="video-grid grid-2"></div>
+      <div class="show-more-wrap"><button class="show-more-btn" id="more-vt2a-vgs" onclick="toggleMore('vt2a-vgs')">Show More</button></div>
+    </div>
+
+    <div class="tab-content" id="vt2a-vt2a-compare">
+      <div class="info-box">
+        <strong>4-Way Comparison:</strong> AudioX | HuanyuanVideo-Foley | MMAudio | CineDub (Ours).
+      </div>
+      <div id="grid-vt2a-cmp" class="compare-section"></div>
+      <div class="show-more-wrap"><button class="show-more-btn" id="more-vt2a-cmp" onclick="toggleMore('vt2a-cmp')">Show More</button></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<script src="data.js"></script>
+<script>
+// ===== TAB SWITCHING =====
+function switchTab(group, id) {
+  // Find all tab-btns and tab-contents in the group's parent tabs element
+  const tabsEl = document.getElementById(group + '-tabs');
+  if(!tabsEl) return;
+  const btns = tabsEl.querySelectorAll('.tab-btn');
+  const allContents = document.querySelectorAll('[id^="' + group + '-"]');
+  btns.forEach(b => b.classList.remove('active'));
+  allContents.forEach(c => c.classList.remove('active'));
+  const targetId = group + '-' + id;
+  const targetEl = document.getElementById(targetId);
+  if(targetEl) targetEl.classList.add('active');
+  // activate btn
+  btns.forEach(b => { if(b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) b.classList.add('active'); });
+  // Lazy-render tab content on first activation
+  if (typeof _TAB_RENDERS !== 'undefined' && _TAB_RENDERS[id]) _ensureRender(id, _TAB_RENDERS[id]);
+}
+
+// ===== SHOW MORE =====
+const showMoreState = {};
+function toggleMore(key) {
+  const hiddenEl = document.querySelector('[data-more="' + key + '"]');
+  const btn = document.getElementById('more-' + key);
+  if(!hiddenEl) return;
+  const isHidden = !showMoreState[key];
+  showMoreState[key] = isHidden;
+  hiddenEl.style.display = isHidden ? 'grid' : 'none';
+  if(btn) btn.textContent = isHidden ? 'Show Less' : 'Show More';
+}
+
+
+function openLightbox(src) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  img.src = src;
+  lb.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeLightbox(); });
+
+// ===== RENDER HELPERS =====
+let cardIdx = 0;
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Build inline paragraph: desc <S>speech<E> desc <S>speech<E> ...
+function buildTransPara(tc) {
+  const re = /([^]*?)<S>([\s\S]*?)<E>/g;
+  let m, html = '', hasMatch = false;
+  while ((m = re.exec(tc)) !== null) {
+    hasMatch = true;
+    const desc = m[1].replace(/^[\s.,]+|[\s.,]+$/g, '');
+    const speech = m[2].trim();
+    if (desc) html += '<span class="trans-desc-inline">' + esc(desc) + '</span> ';
+    html += '<span class="trans-s">&lt;S&gt;</span>';
+    html += '<span class="trans-speech-inline">' + esc(speech) + '</span>';
+    html += '<span class="trans-e">&lt;E&gt;</span> ';
+  }
+  if (!hasMatch) html = '<span style="color:var(--text2)">' + esc(tc) + '</span>';
+  return html.trimEnd();
+}
+
+const TRANS_HEADER = '<div class="trans-header">Transcription Caption<span class="trans-header-tag">Gemini 2.5 Pro</span></div>';
+const AUDIO_CAP_HEADER = '<div class="trans-header">Audio Caption<span class="trans-header-tag">Gemini 2.5 Pro</span></div>';
+function mkAudioCap(text) {
+  if(!text || text === 'clean speech') return '';
+  return '<div class="trans-wrap" style="margin-top:8px">' + AUDIO_CAP_HEADER +
+    '<div class="trans-body">' + esc(text) + '</div></div>';
+}
+
+function mkTransCap(tc) {
+  if(!tc) return '';
+  const fullHtml = buildTransPara(tc);
+  return '<div class="trans-wrap">' + TRANS_HEADER +
+    '<div class="trans-body">' + fullHtml + '</div></div>';
+}
+
+function mkVideoCard(item, label, labelClass, showPrompt) {
+  const vp = item.video_path || '';
+  const tc = mkTransCap(item.trans_cap || '');
+  let promptRow = '';
+  if(showPrompt && item.text_prompt) {
+    promptRow = mkAudioCap(item.text_prompt);
+  }
+  return '<div class="vcard' + (labelClass === 'ours-label' ? ' ours' : '') + '">' +
+    (label ? '<div class="vcard-label ' + labelClass + '">' + label + '</div>' : '') +
+    '<video controls preload="none" src="' + vp + '"></video>' +
+    '<div class="vcard-body">' + promptRow + tc + '</div></div>';
+}
+
+// ===== RENDER DIALOGUE =====
+function renderDialogueClass(key, containerId, moreKey, initialShow) {
+  const items = DATA.dialogue[key] || [];
+  const cont = document.getElementById(containerId);
+  if(!cont) return;
+  let html = '';
+  items.slice(0, initialShow).forEach(item => { html += mkVideoCard(item, null, '', false); });
+  cont.innerHTML = html;
+  if(items.length > initialShow) {
+    const more = document.createElement('div');
+    more.setAttribute('data-more', moreKey);
+    more.style.display = 'none';
+    more.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    more.style.gap = '20px';
+    let moreHtml = '';
+    items.slice(initialShow).forEach(item => { moreHtml += mkVideoCard(item, null, '', false); });
+    more.innerHTML = moreHtml;
+    cont.parentElement.insertBefore(more, cont.nextSibling);
+  } else {
+    const btn = document.getElementById('more-' + moreKey);
+    if(btn) btn.style.display = 'none';
+  }
+}
+
+// ===== RENDER AUDIO PROMPT =====
+function renderAudioPrompt() {
+  const cont = document.getElementById('ap-groups');
+  const groups = DATA.audio_prompt;
+  const INIT = 2;
+  function mkGroup(group, gi) {
+    let g = '<div class="ap-group"><div class="ap-group-header">Group ' + (gi+1) + ' — Reference Audio</div><div class="ap-group-body">';
+    g += '<div class="ref-audio-wrap"><div class="ref-audio-label">Reference Audio</div><audio controls preload="none" src="' + group.ref_wav + '"></audio></div>';
+    g += '<div class="ap-cases">';
+    group.cases.forEach((c, ci) => {
+      g += '<div class="vcard"><div class="vcard-label other-label">Case ' + (ci+1) + '</div>';
+      g += '<video controls preload="none" src="' + c.video_path + '"></video>';
+      g += '<div class="vcard-body">' + mkTransCap(c.trans_cap) + '</div></div>';
+    });
+    g += '</div></div></div>';
+    return g;
+  }
+  let html = '';
+  groups.slice(0, INIT).forEach((group, gi) => { html += mkGroup(group, gi); });
+  cont.innerHTML = html;
+  if (groups.length > INIT) {
+    const more = document.createElement('div');
+    more.setAttribute('data-more', 'ap-groups');
+    more.style.display = 'none';
+    let moreHtml = '';
+    groups.slice(INIT).forEach((group, gi) => { moreHtml += mkGroup(group, INIT + gi); });
+    more.innerHTML = moreHtml;
+    cont.parentElement.insertBefore(more, cont.nextSibling);
+  } else {
+    const btn = document.getElementById('more-ap-groups');
+    if (btn) btn.style.display = 'none';
+  }
+}
+
+// ===== RENDER TEXT PROMPT =====
+function renderTextPrompt() {
+  const cont = document.getElementById('tp-grid');
+  const items = DATA.text_prompt;
+  const headers = [
+    {cls: 'v1', label: 'Version 1 — Baseline'},
+    {cls: 'v2', label: 'Version 2 — Emotion Edit'},
+    {cls: 'v3', label: 'Version 3 — Style+Ambient'}
+  ];
+  let html = '';
+  items.forEach((item, i) => {
+    const h = headers[i] || {cls:'v1', label:'Version '+(i+1)};
+    html += '<div class="edit-card">';
+    html += '<div class="edit-card-header ' + h.cls + '">' + h.label + '</div>';
+    html += '<video controls preload="none" src="' + item.video_path + '" style="width:100%;aspect-ratio:16/9;display:block;background:#000"></video>';
+    html += '<div style="padding:12px">';
+    html += mkTransCap(item.trans_cap);
+    if(item.text_prompt && item.text_prompt !== 'clean speech') {
+      html += '<div class="trans-wrap" style="margin-top:8px">' +
+        '<div class="trans-header">Audio Prompt<span class="trans-header-tag">Gemini 2.5 Pro</span></div>' +
+        '<div class="trans-body">' + esc(item.text_prompt) + '</div></div>';
+    }
+    html += '</div></div>';
+  });
+  cont.innerHTML = html;
+}
+
+// ===== RENDER VTSA VGGSound =====
+function renderVTSAVgs() {
+  const items = DATA.vtsa.vggsound;
+  const cont = document.getElementById('grid-vtsa-vgs');
+  let html = '';
+  items.slice(0, 4).forEach(item => { html += mkVideoCard(item, null, '', true); });
+  cont.innerHTML = html;
+  if(items.length > 4) {
+    const more = document.createElement('div');
+    more.setAttribute('data-more', 'vtsa-vgs');
+    more.style.display = 'none';
+    more.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    more.style.gap = '20px';
+    let moreHtml = '';
+    items.slice(4).forEach(item => { moreHtml += mkVideoCard(item, null, '', true); });
+    more.innerHTML = moreHtml;
+    cont.parentElement.insertBefore(more, cont.nextSibling);
+  } else {
+    const btn = document.getElementById('more-vtsa-vgs');
+    if(btn) btn.style.display = 'none';
+  }
+}
+
+// ===== RENDER VTSA OOD =====
+function renderVTSAOOD() {
+  const items = DATA.vtsa.ood;
+  const cont = document.getElementById('grid-vtsa-ood');
+  const INIT = 4;
+  let html = '';
+  items.slice(0, INIT).forEach(item => { html += mkVideoCard(item, null, '', true); });
+  cont.innerHTML = html;
+  if (items.length > INIT) {
+    const more = document.createElement('div');
+    more.setAttribute('data-more', 'vtsa-ood');
+    more.style.display = 'none';
+    more.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    more.style.gap = '20px';
+    let moreHtml = '';
+    items.slice(INIT).forEach(item => { moreHtml += mkVideoCard(item, null, '', true); });
+    more.innerHTML = moreHtml;
+    cont.parentElement.insertBefore(more, cont.nextSibling);
+  } else {
+    const btn = document.getElementById('more-vtsa-ood');
+    if (btn) btn.style.display = 'none';
+  }
+}
+
+// ===== RENDER VTSA COMPARE =====
+function renderVTSACompare() {
+  const items = DATA.vtsa.compare;
+  const cont = document.getElementById('grid-vtsa-cmp');
+  const INIT = 2;
+  function mkRow(item) {
+    const capHtml = mkTransCap(item.trans_cap || '');
+    let r = '<div class="compare-row">';
+    r += '<div class="compare-videos" style="grid-template-columns:1fr 1fr 1fr">';
+    r += '<div class="vcard"><div class="vcard-label other-label">AlignDiT + MMAudio</div><video controls preload="none" src="' + item.aligndit + '"></video></div>';
+    r += '<div class="vcard"><div class="vcard-label other-label">DeepAudio + MMAudio</div><video controls preload="none" src="' + item.deepaudio + '"></video></div>';
+    r += '<div class="vcard ours"><div class="vcard-label ours-label">CineDub (Ours)</div><video controls preload="none" src="' + item.cinedub + '"></video></div>';
+    r += '</div>';
+    if(capHtml || item.text_prompt) {
+      r += '<div class="compare-cap">';
+      if(item.text_prompt) r += mkAudioCap(item.text_prompt);
+      if(capHtml) r += capHtml;
+      r += '</div>';
+    }
+    r += '</div>';
+    return r;
+  }
+  let html = '';
+  items.slice(0, INIT).forEach(item => { html += mkRow(item); });
+  cont.innerHTML = html;
+  if (items.length > INIT) {
+    const more = document.createElement('div');
+    more.setAttribute('data-more', 'vtsa-cmp');
+    more.style.display = 'none';
+    let moreHtml = '';
+    items.slice(INIT).forEach(item => { moreHtml += mkRow(item); });
+    more.innerHTML = moreHtml;
+    cont.parentElement.insertBefore(more, cont.nextSibling);
+  } else {
+    const btn = document.getElementById('more-vtsa-cmp');
+    if (btn) btn.style.display = 'none';
+  }
+}
+
+// ===== RENDER VT2A VGGSound =====
+function renderVT2AVgs() {
+  const items = DATA.vt2a.vggsound;
+  const cont = document.getElementById('grid-vt2a-vgs');
+  const strip = item => ({...item, trans_cap: ''});
+  let html = '';
+  items.slice(0, 4).forEach(item => { html += mkVideoCard(strip(item), null, '', true); });
+  cont.innerHTML = html;
+  if(items.length > 4) {
+    const more = document.createElement('div');
+    more.setAttribute('data-more', 'vt2a-vgs');
+    more.style.display = 'none';
+    more.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    more.style.gap = '20px';
+    let moreHtml = '';
+    items.slice(4).forEach(item => { moreHtml += mkVideoCard(strip(item), null, '', true); });
+    more.innerHTML = moreHtml;
+    cont.parentElement.insertBefore(more, cont.nextSibling);
+  } else {
+    const btn = document.getElementById('more-vt2a-vgs');
+    if(btn) btn.style.display = 'none';
+  }
+}
+
+// ===== RENDER VT2A COMPARE =====
+function renderVT2ACompare() {
+  const items = DATA.vt2a.compare;
+  const cont = document.getElementById('grid-vt2a-cmp');
+  const INIT = 2;
+  function mkRow(item) {
+    let r = '<div class="compare-row">';
+    r += '<div class="compare-videos" style="grid-template-columns:repeat(4,1fr)">';
+    r += '<div class="vcard"><div class="vcard-label other-label">AudioX</div><video controls preload="none" src="' + item.audiox + '"></video></div>';
+    r += '<div class="vcard"><div class="vcard-label other-label">HuanyuanVideo-Foley</div><video controls preload="none" src="' + item.huanyu + '"></video></div>';
+    r += '<div class="vcard"><div class="vcard-label other-label">MMAudio</div><video controls preload="none" src="' + item.mmaudio + '"></video></div>';
+    r += '<div class="vcard ours"><div class="vcard-label ours-label">CineDub (Ours)</div><video controls preload="none" src="' + item.cinedub + '"></video></div>';
+    r += '</div>';
+    if(item.text_prompt) {
+      r += '<div class="compare-cap">' + mkAudioCap(item.text_prompt) + '</div>';
+    }
+    r += '</div>';
+    return r;
+  }
+  let html = '';
+  items.slice(0, INIT).forEach(item => { html += mkRow(item); });
+  cont.innerHTML = html;
+  if (items.length > INIT) {
+    const more = document.createElement('div');
+    more.setAttribute('data-more', 'vt2a-cmp');
+    more.style.display = 'none';
+    let moreHtml = '';
+    items.slice(INIT).forEach(item => { moreHtml += mkRow(item); });
+    more.innerHTML = moreHtml;
+    cont.parentElement.insertBefore(more, cont.nextSibling);
+  } else {
+    const btn = document.getElementById('more-vt2a-cmp');
+    if (btn) btn.style.display = 'none';
+  }
+}
+
+// ===== DIALOGUE COMPARE DATA =====
+const DLG_COMPARE = [
+  {
+    trans_cap: "[A middle-aged man with a standard American accent speaks in a clear, mid-range tone, his delivery conversational and moderately paced] <S>what's going to happen. Um, I don't think that's what's happening right now in the NCAA.<E> then a woman interjects with a sharp, assertive voice, speaking at a faster pace with an emphatic and direct tone, <S>Can I tell you something, Matt? Let me tell you something in response to that. It's exactly the opposite because here's what's happening now. I know<E>",
+    funcinef: "media/Dialogue/Fun-CineForge_mp4/2gjwyFc8HNk_469.33_475.57.mp4",
+    cinedub: "media/Dialogue/mp4/2gjwyFc8HNk_469.33_475.57.mp4"
+  },
+  {
+    trans_cap: "A woman says in a loud, high-pitched, and agitated voice: <S>You're sounding like a madman!<E>. A man responds in a tense and forceful tone: <S>I won't pretend like everything's okay, Alice. It's how I got into this mess.<E>",
+    funcinef: "media/Dialogue/Fun-CineForge_mp4/9e819111-53e7-4bbe-bb99-f5a51d400439_crop_VTS_clean speech.mp4",
+    cinedub: "media/Dialogue/mp4/9e819111-53e7-4bbe-bb99-f5a51d400439_crop_VTS_clean speech.mp4"
+  },
+  {
+    trans_cap: "A middle-aged man says in a clear, medium-pitched voice with a calm, slightly weary tone: <S>I'm gonna walk it.<E>. Another man replies with a questioning tone: <S>Walk?<E>. The first man confirms: <S>Mhm.<E>. The second man then says, his voice conveying confusion: <S>What? Hold on.<E>",
+    funcinef: "media/Dialogue/Fun-CineForge_mp4/1afc086e-bb07-4fc8-91c0-340a9ee5194a_000001038_VTS_A very faint.mp4",
+    cinedub: "media/Dialogue/mp4/1afc086e-bb07-4fc8-91c0-340a9ee5194a_000001038_VTS_A very faint.mp4"
+  },
+  {
+    trans_cap: "A young man with an American accent speaks in a clear, energetic tone. His pace is fast and his pitch is varied, conveying enthusiasm as he says: <S>and that is providing the oxygen of growth is like the pull of customers.<E> Then, a mature man with an American accent speaks in a deeper, resonant voice. His pace is measured and his tone is thoughtful and conversational as he says: <S>It's funny because like those companies tend to own more of their company.<E>",
+    funcinef: "media/Dialogue/Fun-CineForge_mp4/6606a2ka-jQ_280.46_289.7.mp4",
+    cinedub: "media/Dialogue/mp4/6606a2ka-jQ_280.46_289.7.mp4"
+  }
+  /* removed: ,
+  {
+    trans_cap: "A young man asks in a questioning and slightly defensive tone, with a medium pitch: <S>Are you saying that I'm making this up?<E>. An off-screen female voice replies in a softer tone: <S>No, I just joking<E>",
+    funcinef: "media/Dialogue/Fun-CineForge_mp4/c16d313e-f134-4688-8c94-2772fead482d_000000583_VTS.mp4",
+    cinedub: "media/Dialogue/mp4/c16d313e-f134-4688-8c94-2772fead482d_000000583_VTS.mp4"
+  },
+  {
+    trans_cap: "A woman says in a clear, medium-pitched voice with a questioning intonation: <S>So sorry, I thought you killed him two months ago, didn't you?<E>. A man replies in a slightly deeper, serious, and firm tone: <S>No, I didn't. No, he's a vampire.<E>. The woman then asks with confusion and surprise: <S>What do you mean?<E>",
+    funcinef: "media/Dialogue/Fun-CineForge_mp4/f6cefc4c-6824-43a7-b98a-e53a1b576430_VTS.mp4",
+    cinedub: "media/Dialogue/mp4/f6cefc4c-6824-43a7-b98a-e53a1b576430_VTS.mp4"
+  }
+  */
+];
+
+// ===== RENDER DIALOGUE COMPARE =====
+function renderDlgCompare() {
+  const cont = document.getElementById('grid-compare');
+  if (!cont) return;
+  const INIT = 2;
+  function mkRow(item) {
+    let r = '<div class="compare-row">';
+    r += '<div class="compare-videos" style="grid-template-columns:1fr 1fr">';
+    r += '<div class="vcard"><div class="vcard-label other-label">FunCineForge</div><video controls preload="none" src="' + item.funcinef + '"></video></div>';
+    r += '<div class="vcard ours"><div class="vcard-label ours-label">CineDub (Ours)</div><video controls preload="none" src="' + item.cinedub + '"></video></div>';
+    r += '</div>';
+    r += '<div class="compare-cap">' + mkTransCap(item.trans_cap) + '</div>';
+    r += '</div>';
+    return r;
+  }
+  let html = '';
+  DLG_COMPARE.slice(0, INIT).forEach(item => { html += mkRow(item); });
+  cont.innerHTML = html;
+  if (DLG_COMPARE.length > INIT) {
+    const more = document.createElement('div');
+    more.setAttribute('data-more', 'dlg-cmp');
+    more.style.display = 'none';
+    let moreHtml = '';
+    DLG_COMPARE.slice(INIT).forEach(item => { moreHtml += mkRow(item); });
+    more.innerHTML = moreHtml;
+    cont.parentElement.insertBefore(more, cont.nextSibling);
+  } else {
+    const btn = document.getElementById('more-dlg-cmp');
+    if (btn) btn.style.display = 'none';
+  }
+}
+
+// ===== LAZY RENDER SYSTEM =====
+const _rendered = new Set();
+function _ensureRender(key, fn) {
+  if (_rendered.has(key)) return;
+  _rendered.add(key);
+  fn();
+}
+const _TAB_RENDERS = {
+  'podcast':      () => renderDialogueClass('podcast', 'grid-podcast', 'podcast', 4),
+  'tv_zoom':      () => renderDialogueClass('tv_zoom', 'grid-tv_zoom', 'tv_zoom', 4),
+  'compare':      () => renderDlgCompare(),
+  'audio-prompt': () => renderAudioPrompt(),
+  'text-prompt':  () => renderTextPrompt(),
+  'vggsound':     () => renderVTSAVgs(),
+  'ood':          () => renderVTSAOOD(),
+  'vtsa-compare': () => renderVTSACompare(),
+  'vggsound2':    () => renderVT2AVgs(),
+  'vt2a-compare': () => renderVT2ACompare(),
+};
+
+// INIT: only render Section 1's default visible tab (Movie)
+renderDialogueClass('movie', 'grid-movie', 'movie', 4);
+
+// Sections 2 & 3: render default tab when they enter the viewport
+const _secObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    if (e.target.id === 'sec2') _ensureRender('vggsound', renderVTSAVgs);
+    if (e.target.id === 'sec3') _ensureRender('vggsound2', renderVT2AVgs);
+    _secObs.unobserve(e.target);
+  });
+}, { rootMargin: '400px 0px' });
+['sec2', 'sec3'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) _secObs.observe(el);
+});
+
+// ===== VIDEO FIRST-FRAME THUMBNAILS =====
+// When a video scrolls into view, load its metadata and seek to frame 0
+// so users see the first frame instead of a black box.
+const _thumbObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const v = entry.target;
+    if (v.dataset.thumbLoaded) return;
+    v.dataset.thumbLoaded = '1';
+    v.preload = 'metadata';
+    const show = () => { v.currentTime = 0.001; };
+    if (v.readyState >= 1) { show(); }
+    else { v.addEventListener('loadedmetadata', show, { once: true }); v.load(); }
+    _thumbObs.unobserve(v);
+  });
+}, { rootMargin: '400px 0px' });
+
+// Observe all current videos and re-observe when more are added (Show More, tab switch)
+function _observeVideos(root) {
+  (root || document).querySelectorAll('video').forEach(v => _thumbObs.observe(v));
+}
+_observeVideos();
+new MutationObserver(muts => {
+  muts.forEach(m => m.addedNodes.forEach(n => {
+    if (n.nodeType !== 1) return;
+    if (n.tagName === 'VIDEO') _thumbObs.observe(n);
+    else n.querySelectorAll && n.querySelectorAll('video').forEach(v => _thumbObs.observe(v));
+  }));
+}).observe(document.body, { childList: true, subtree: true });
+</script>
+
+<!-- ===== SIDE NAV ===== -->
+<nav class="side-nav" id="sideNav">
+  <div class="side-nav-track"></div>
+  <a href="#overview"  class="side-nav-item" data-sec="overview" ><span class="side-dot"></span><span class="side-label">Overview</span></a>
+  <a href="#figures"   class="side-nav-item" data-sec="figures"  ><span class="side-dot"></span><span class="side-label">Figures</span></a>
+  <a href="#compare"   class="side-nav-item" data-sec="compare"  ><span class="side-dot"></span><span class="side-label">Comparison</span></a>
+  <a href="#demos"     class="side-nav-item" data-sec="demos"    ><span class="side-dot"></span><span class="side-label">Demos</span></a>
+  <a href="#sec1"      class="side-nav-item" data-sec="sec1"     ><span class="side-dot"></span><span class="side-label">§1 Video Dubbing</span></a>
+  <a href="#sec2"      class="side-nav-item" data-sec="sec2"     ><span class="side-dot"></span><span class="side-label">§2 Speech &amp; Audio</span></a>
+  <a href="#sec3"      class="side-nav-item" data-sec="sec3"     ><span class="side-dot"></span><span class="side-label">§3 Video to Audio</span></a>
+</nav>
+<script>
+(function(){
+  const items = document.querySelectorAll('.side-nav-item');
+  const ids = ['overview','figures','compare','demos','sec1','sec2','sec3'];
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      const link = document.querySelector('.side-nav-item[data-sec="'+e.target.id+'"]');
+      if(link) link.classList.toggle('active', e.isIntersecting);
+    });
+  }, {threshold:0.15});
+  ids.forEach(id => { const el = document.getElementById(id); if(el) obs.observe(el); });
+})();
+</script>
+
+<!-- ===== FOOTER ===== -->
+<footer style="text-align:center;padding:32px 20px 28px;color:var(--text3);font-size:13px;border-top:1px solid var(--border);margin-top:60px">
+  <div style="display:inline-flex;align-items:center;gap:24px;flex-wrap:wrap;justify-content:center">
+    <span style="display:inline-flex;align-items:center;gap:6px">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+      Total Views: <span id="busuanzi_value_site_pv" style="color:var(--gold);font-weight:600">—</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      Visitors: <span id="busuanzi_value_site_uv" style="color:var(--gold);font-weight:600">—</span>
+    </span>
+  </div>
+  <p style="margin-top:12px">Anonymous submission · Under Review</p>
+  <p style="margin-top:8px;font-size:11px">Demo page for blind review. Author information withheld.</p>
+</footer>
+
+<!-- Busuanzi Visitor Counter -->
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+</body>
+</html>
