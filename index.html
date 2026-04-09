@@ -589,7 +589,7 @@ footer a{color:var(--text2);text-decoration:none}
         <tr><td>DualDub</td><td>Holistic</td><td class="check">✓</td><td class="partial">△ <span style="font-size:10px;font-weight:400">AR</span></td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <tr><td>BVS</td><td>Holistic</td><td class="check">✓</td><td class="partial">△ <span style="font-size:10px;font-weight:400">AR</span></td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <tr><td>AudioGen-Omni</td><td>Holistic</td><td class="check">✓</td><td class="check">✓</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
-        <tr><td>VSSFlow</td><td>Holistic</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>VSSFlow</td><td>Lip/Face Crop</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
         <!-- ── Ours ── -->
         <tr class="group-hdr ours-hdr"><td colspan="8">Ours</td></tr>
         <tr class="ours-row">
@@ -881,11 +881,11 @@ function renderAudioPrompt() {
   const INIT = 2;
   function mkGroup(group, gi) {
     let g = '<div class="ap-group"><div class="ap-group-header">Group ' + (gi+1) + ' — Reference Audio</div><div class="ap-group-body">';
-    g += '<div class="ref-audio-wrap"><div class="ref-audio-label">Reference Audio</div><audio controls preload="none" src="' + group.ref_wav + '"></audio></div>';
+    g += '<div class="ref-audio-wrap"><div class="ref-audio-label">Reference Audio</div><audio controls preload="auto" src="' + group.ref_wav + '"></audio></div>';
     g += '<div class="ap-cases">';
     group.cases.forEach((c, ci) => {
       g += '<div class="vcard"><div class="vcard-label other-label">Case ' + (ci+1) + '</div>';
-      g += '<video controls preload="none" src="' + c.video_path + '"></video>';
+      g += '<video controls preload="auto" src="' + c.video_path + '"></video>';
       g += '<div class="vcard-body">' + mkTransCap(c.trans_cap) + '</div></div>';
     });
     g += '</div></div></div>';
